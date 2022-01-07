@@ -3,7 +3,7 @@
 # Postprocessor script for ALPACA outputs using Paraview
 # Created by Daniel Nagy (nagyd@edu.bme.hu)
 # Date: 07/01/2022
-# Version: 2D planar 1.8
+# Version: 3D 1.0
 # HDS Sonochemistry Research Group
 #
 ###############################################################################
@@ -49,7 +49,7 @@ parser.add_argument('--savewave',action='store', type=str, default='none', help=
 parser.add_argument('--nosavedata',action='store_const',  default=1, const=0, help='Saves the bubble and inlet data')
 parser.add_argument('--pmin',action='store', type=float, default=0.9e5, help='Minimal pressure on the scale')
 parser.add_argument('--pmax',action='store', type=float, default=1.1e5, help='Maximal pressure on the scale')
-parser.add_argument('--version',action='version', version='Paraview postprocessor (2D planar) 1.8')
+parser.add_argument('--version',action='version', version='Paraview postprocessor (3D) 1.0')
 
 #get the data from the command line arguments arguments
 args = parser.parse_args()
@@ -315,7 +315,7 @@ for i in range(length):
         massB = 0
         volumeB = 0
         for j in range(bubbleCellsNr):
-            vol = cellSizes.GetCellData().GetArray('Volume').GetValue(j)**(2/3)
+            vol = cellSizes.GetCellData().GetArray('Volume').GetValue(j)
             volumeB = volumeB + vol
             massB = massB + vol * bubbleData.GetCellData().GetArray('density').GetValue(j)
 

@@ -3,7 +3,7 @@
 # Postprocessor script for ALPACA outputs using Paraview
 # Created by Daniel Nagy (nagyd@edu.bme.hu)
 # Date: 07/01/2022
-# Version: 2D planar 1.8
+# Version: 2D axis 1.1
 # HDS Sonochemistry Research Group
 #
 ###############################################################################
@@ -35,6 +35,8 @@ import argparse
 import shutil
 import numpy as np
 
+pi=3.14159265
+
 ################################################################################
 
 #    Argument parser
@@ -49,7 +51,7 @@ parser.add_argument('--savewave',action='store', type=str, default='none', help=
 parser.add_argument('--nosavedata',action='store_const',  default=1, const=0, help='Saves the bubble and inlet data')
 parser.add_argument('--pmin',action='store', type=float, default=0.9e5, help='Minimal pressure on the scale')
 parser.add_argument('--pmax',action='store', type=float, default=1.1e5, help='Maximal pressure on the scale')
-parser.add_argument('--version',action='version', version='Paraview postprocessor (2D planar) 1.8')
+parser.add_argument('--version',action='version', version='Paraview postprocessor (2D axis) 1.1')
 
 #get the data from the command line arguments arguments
 args = parser.parse_args()
@@ -218,11 +220,11 @@ print("Corners found:")
 print("   Bottom left:  (",bottomLeftCoord[0],",",bottomLeftCoord[1],")")
 print("   Top right  :  (",topRightCoord[0],",",topRightCoord[1],")")
 
-middleCoord = (topRightCoord[1] + bottomLeftCoord[1])/2
-bottomCoord = 0.01*topRightCoord[1] + 0.99*bottomLeftCoord[1]
-topCoord = 0.99*topRightCoord[1] + 0.01*bottomLeftCoord[1]
-leftSide = bottomLeftCoord[0]
-rightSide = topRightCoord[0]
+middleCoord = (topRightCoord[0] + bottomLeftCoord[0])/2
+bottomCoord = 0.01*topRightCoord[0] + 0.99*bottomLeftCoord[0]
+topCoord = 0.99*topRightCoord[0] + 0.01*bottomLeftCoord[0]
+leftSide = bottomLeftCoord[1]
+rightSide = topRightCoord[1]
 if saveTop:
     print("Top coordinate    y=",topCoord)
 if saveMiddle:
@@ -311,11 +313,17 @@ for i in range(length):
         bubbleCellsNr = bubbleData.GetCellData().GetArray('density').GetNumberOfValues()
         cellSizes = paraview.servermanager.Fetch(CellSize(registrationName='Cell Sizes', Input=bubble))
 
+        #get cell centers
+        cellCenters = CellCenters(bubble)
+        cellCentersData = paraview.servermanager.Fetch(cellCenters)
+
         #calculate bubble mass and volume
         massB = 0
         volumeB = 0
         for j in range(bubbleCellsNr):
-            vol = cellSizes.GetCellData().GetArray('Volume').GetValue(j)**(2/3)
+            area = cellSizes.GetCellData().GetArray('Volume').GetValue(j)**(2/3)
+            dist = cellCentersData.GetPoint(j)[0]
+            vol = 2*pi*area*dist
             volumeB = volumeB + vol
             massB = massB + vol * bubbleData.GetCellData().GetArray('density').GetValue(j)
 
@@ -353,22 +361,22 @@ for i in range(length):
     Show(rawData)
     if saveTop:
         pltOverLine = PlotOverLine(registrationName='Plot Top',Input=rawData)
-        pltOverLine.Source.Point1 = [leftSide, topCoord, 0]
-        pltOverLine.Source.Point2 = [rightSide, topCoord, 0]
+        pltOverLine.Source.Point1 = [topCoord, leftSide, 0]
+        pltOverLine.Source.Point2 = [topCoord, rightSide, 0]
         lineData = paraview.servermanager.Fetch(pltOverLine)
         writeAllLines(fileT,lineData)
 
     if saveMiddle:
         pltOverLine = PlotOverLine(registrationName='Plot Middle',Input=rawData)
-        pltOverLine.Source.Point1 = [leftSide, middleCoord, 0]
-        pltOverLine.Source.Point2 = [rightSide, middleCoord, 0]
+        pltOverLine.Source.Point1 = [middleCoord, leftSide, 0]
+        pltOverLine.Source.Point2 = [middleCoord, rightSide, 0]
         lineData = paraview.servermanager.Fetch(pltOverLine)
         writeAllLines(fileM,lineData)
 
     if saveBottom:
         pltOverLine = PlotOverLine(registrationName='Plot Bottom',Input=rawData)
-        pltOverLine.Source.Point1 = [leftSide, bottomCoord, 0]
-        pltOverLine.Source.Point2 = [rightSide, bottomCoord, 0]
+        pltOverLine.Source.Point1 = [bottomCoord, leftSide, 0]
+        pltOverLine.Source.Point2 = [bottomCoord, rightSide, 0]
         lineData = paraview.servermanager.Fetch(pltOverLine)
         writeAllLines(fileB,lineData)
 
